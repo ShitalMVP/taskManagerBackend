@@ -1,16 +1,16 @@
 // index.js
 
-const express = require('express');
+const express = require("express");
 const app = express();
-const dotenv =require("dotenv")
-const morgan=require("morgan")
+const dotenv = require("dotenv");
+const morgan = require("morgan");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const connectDB = require("./config/db");
-const authrouter=require("./routes/auth")
-const taskrouter=require("./routes/task")
+const authrouter = require("./routes/auth");
+const taskrouter = require("./routes/task");
 dotenv.config();
-connectDB()
+connectDB();
 
 // Middlewares
 app.use(morgan("dev"));
@@ -20,7 +20,7 @@ app.use(cookieParser());
 
 const allowedOrigins = [
 	"http://localhost:5173",
-	
+
 	// "*",
 ];
 
@@ -33,21 +33,21 @@ app.use(
 	})
 );
 
-app.use("/api/auth",authrouter)
-app.use("/api/task",taskrouter)
+app.use("/api/auth", authrouter);
+app.use("/api/task", taskrouter);
 // Basic route
-app.get('/', (req, res) => {
-  res.send('Hello, World!');
+app.get("/", (req, res) => {
+	res.send("Hello, World!");
 });
 
 // Example POST route
-app.post('/api/data', (req, res) => {
-  const data = req.body;
-  res.json({ message: 'Data received', data });
+app.post("/api/data", (req, res) => {
+	const data = req.body;
+	res.json({ message: "Data received", data });
 });
 
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+	console.log(`Server is running on http://localhost:${PORT}`);
 });
