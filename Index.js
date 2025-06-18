@@ -9,6 +9,7 @@ const cookieParser = require("cookie-parser");
 const connectDB = require("./config/db");
 const authrouter = require("./routes/auth");
 const taskrouter = require("./routes/task");
+const statrouter = require("./routes/stats");
 dotenv.config();
 connectDB();
 
@@ -34,16 +35,11 @@ app.use(
 );
 
 app.use("/api/auth", authrouter);
-app.use("/api/task", taskrouter);
+app.use("/api/tasks", taskrouter);
+app.use("/api/stats", statrouter);
 // Basic route
 app.get("/", (req, res) => {
 	res.send("Hello, World!");
-});
-
-// Example POST route
-app.post("/api/data", (req, res) => {
-	const data = req.body;
-	res.json({ message: "Data received", data });
 });
 
 // Start server
