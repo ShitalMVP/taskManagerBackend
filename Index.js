@@ -21,7 +21,7 @@ app.use(cookieParser());
 
 const allowedOrigins = [
 	"http://localhost:5173",
-
+     "https://sensational-nasturtium-38fe59.netlify.app",
 	// "*",
 ];
 
