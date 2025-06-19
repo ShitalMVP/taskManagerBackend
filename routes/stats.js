@@ -9,7 +9,7 @@ const verifyToken = require("../middleware/verifyToken.js");
  * GET /api/dashboard/summary
  * Returns total, completed, and pending task counts for the authenticated user
  */
-router.get("/", verifyToken, async (req, res) => {
+router.get("/", async (req, res) => {
 	try {
 		const userId = req.userId;
 

@@ -9,7 +9,7 @@ const verifyToken = require("../middleware/verifyToken");
  * GET /api/tasks
  * Fetch all tasks for the authenticated user
  */
-router.get("/", verifyToken, async (req, res) => {
+router.get("/", async (req, res) => {
 	try {
 		const tasks = await Task.find({ user: req.userId }).sort({ createdAt: -1 });
 		res.status(200).json({
@@ -27,7 +27,7 @@ router.get("/", verifyToken, async (req, res) => {
  * POST /api/tasks
  * Create a new task
  */
-router.post("/", verifyToken, async (req, res) => {
+router.post("/", async (req, res) => {
 	try {
 		const { title, description } = req.body;
 		if (!title) {
@@ -54,7 +54,7 @@ router.post("/", verifyToken, async (req, res) => {
  * PUT /api/tasks/:id
  * Update an existing task
  */
-router.put("/:id", verifyToken, async (req, res) => {
+router.put("/:id", async (req, res) => {
 	try {
 		const updatedTask = await Task.findOneAndUpdate(
 			{ _id: req.params.id, user: req.userId },
@@ -83,7 +83,7 @@ router.put("/:id", verifyToken, async (req, res) => {
  * PATCH /api/tasks/:id/status
  * Toggle task completion
  */
-router.patch("/:id/status", verifyToken, async (req, res) => {
+router.patch("/:id/status", async (req, res) => {
 	try {
 		const { completed } = req.body;
 		const updated = await Task.findOneAndUpdate(
@@ -113,7 +113,7 @@ router.patch("/:id/status", verifyToken, async (req, res) => {
  * DELETE /api/tasks/:id
  * Delete a task
  */
-router.delete("/:id", verifyToken, async (req, res) => {
+router.delete("/:id", async (req, res) => {
 	try {
 		const deleted = await Task.findOneAndDelete({
 			_id: req.params.id,
