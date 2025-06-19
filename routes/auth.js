@@ -44,8 +44,9 @@ router.post("/login", async (req, res) => {
 
 		// Set cookie with token
 		res.cookie("token", token, {
-			httpOnly: true,
+			httpOnly: false,
 			sameSite: "strict",
+			secure:true, // Use secure cookies in production
 		});
 
 		// Respond with token and user info (optional)
