@@ -136,4 +136,41 @@ router.delete("/:id", async (req, res) => {
 	}
 });
 
+router.get("/", async (req, res) => {
+	try {
+		const { completed, priority, search, dueDate } = req.query;
+
+		// Build dynamic filter
+		const filter = { user: req.userId };
+
+		if (completed === 'true' || completed === 'false') {
+			filter.completed = completed === 'true';
+		}
+
+		if (priority) {
+			filter.priority = priority;
+		}
+
+		if (search) {
+			filter.title = { $regex: search, $options: "i" }; // Case-insensitive search
+		}
+
+		if (dueDate) {
+			filter.dueDate = new Date(dueDate);
+		}
+
+		const tasks = await Task.find(filter).sort({ createdAt: -1 });
+
+		res.status(200).json({
+			success: true,
+			tasks,
+			message: "Filtered tasks fetched successfully",
+		});
+	} catch (error) {
+		console.error("Fetch tasks error:", error.message);
+		res.status(500).json({ success: false, message: "Internal server error" });
+	}
+});
+
+
 module.exports = router;

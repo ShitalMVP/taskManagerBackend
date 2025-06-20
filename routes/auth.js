@@ -2,8 +2,8 @@ const express = require("express");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
-const { token } = require("morgan");
-const router = express.Router();
+
+const router = express.Router(); // ✅ Only declare once
 
 // Signup
 router.post("/register", async (req, res) => {
@@ -39,17 +39,15 @@ router.post("/login", async (req, res) => {
 		}
 
 		const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-			expiresIn: "7d", // optional: add expiration
+			expiresIn: "7d",
 		});
 
-		// Set cookie with token
 		res.cookie("token", token, {
-			httpOnly: false,
+			httpOnly: false, // ⚠️ should be true in production
 			sameSite: "strict",
-			secure:true, // Use secure cookies in production
+			secure: process.env.NODE_ENV === 'production',
 		});
 
-		// Respond with token and user info (optional)
 		res.status(200).json({
 			success: true,
 			message: "User logged in",
@@ -59,6 +57,16 @@ router.post("/login", async (req, res) => {
 		console.error("Login Error:", error);
 		res.status(500).json({ error: "Internal server error" });
 	}
+});
+
+// ✅ Logout
+router.post('/logout', (req, res) => {
+	res.clearCookie('token', {
+		httpOnly: true,
+		sameSite: 'strict',
+		secure: process.env.NODE_ENV === 'production',
+	});
+	res.status(200).json({ success: true, message: "Logged out successfully" });
 });
 
 module.exports = router;
