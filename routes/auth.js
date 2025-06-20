@@ -69,4 +69,25 @@ router.post('/logout', (req, res) => {
 	res.status(200).json({ success: true, message: "Logged out successfully" });
 });
 
+//filter task
+router.get("/", async (req, res) => {
+	try {
+		const { status } = req.query;
+		const filter = { user: req.userId }; // or req.user._id if using auth middleware
+
+		if (status === "completed") {
+			filter.completed = true;
+		} else if (status === "pending") {
+			filter.completed = false;
+		}
+
+		const tasks = await Task.find(filter).sort({ createdAt: -1 });
+		res.status(200).json({ success: true, tasks });
+	} catch (err) {
+		console.error("Fetch tasks error:", err.message);
+		res.status(500).json({ success: false, message: "Internal server error" });
+	}
+});
+
+
 module.exports = router;

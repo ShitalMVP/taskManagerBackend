@@ -7,15 +7,42 @@ const verifyToken = require("../middleware/verifyToken");
 
 /**
  * GET /api/tasks
- * Fetch all tasks for the authenticated user
+ * Fetch all or filtered tasks for the authenticated user
  */
 router.get("/", async (req, res) => {
 	try {
-		const tasks = await Task.find({ user: req.userId }).sort({ createdAt: -1 });
+		const { status, priority, search, dueDate } = req.query;
+
+		const filter = { user: req.userId };
+
+		// ✅ Filter by status (completed or pending)
+		if (status === "completed") {
+			filter.completed = true;
+		} else if (status === "pending") {
+			filter.completed = false;
+		}
+
+		// ✅ Filter by priority
+		if (priority) {
+			filter.priority = priority;
+		}
+
+		// ✅ Search by title (case-insensitive)
+		if (search) {
+			filter.title = { $regex: search, $options: "i" };
+		}
+
+		// ✅ Filter by dueDate
+		if (dueDate) {
+			filter.dueDate = new Date(dueDate);
+		}
+
+		const tasks = await Task.find(filter).sort({ createdAt: -1 });
+
 		res.status(200).json({
 			success: true,
 			tasks,
-			message: "Tasks fetched successfully",
+			message: "Filtered tasks fetched successfully",
 		});
 	} catch (error) {
 		console.error("Fetch tasks error:", error.message);
@@ -29,14 +56,20 @@ router.get("/", async (req, res) => {
  */
 router.post("/", async (req, res) => {
 	try {
-		const { title, description } = req.body;
+		const { title, description, priority, dueDate } = req.body;
 		if (!title) {
 			return res
 				.status(400)
 				.json({ success: false, message: "Title is required" });
 		}
 
-		const newTask = new Task({ title, description, user: req.userId });
+		const newTask = new Task({
+			title,
+			description,
+			priority,
+			dueDate,
+			user: req.userId,
+		});
 		const savedTask = await newTask.save();
 
 		res.status(201).json({
@@ -135,42 +168,5 @@ router.delete("/:id", async (req, res) => {
 		res.status(500).json({ success: false, message: "Internal server error" });
 	}
 });
-
-router.get("/", async (req, res) => {
-	try {
-		const { completed, priority, search, dueDate } = req.query;
-
-		// Build dynamic filter
-		const filter = { user: req.userId };
-
-		if (completed === 'true' || completed === 'false') {
-			filter.completed = completed === 'true';
-		}
-
-		if (priority) {
-			filter.priority = priority;
-		}
-
-		if (search) {
-			filter.title = { $regex: search, $options: "i" }; // Case-insensitive search
-		}
-
-		if (dueDate) {
-			filter.dueDate = new Date(dueDate);
-		}
-
-		const tasks = await Task.find(filter).sort({ createdAt: -1 });
-
-		res.status(200).json({
-			success: true,
-			tasks,
-			message: "Filtered tasks fetched successfully",
-		});
-	} catch (error) {
-		console.error("Fetch tasks error:", error.message);
-		res.status(500).json({ success: false, message: "Internal server error" });
-	}
-});
-
 
 module.exports = router;
