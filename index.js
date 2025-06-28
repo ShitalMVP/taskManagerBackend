@@ -13,16 +13,18 @@ const statrouter = require("./routes/stats");
 dotenv.config();
 connectDB();
 
+
 // Middlewares
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use("/api/stats", require("./routes/stats"));
 
 const allowedOrigins = [
 	"http://localhost:5173",
      "https://sensational-nasturtium-38fe59.netlify.app",
-	// "*",
+	
 ];
 
 app.use(
@@ -36,7 +38,7 @@ app.use(
 
 app.use("/api/auth", authrouter);
 app.use("/api/tasks", taskrouter);
-app.use("/api/stats", statrouter);
+//app.use("/api/stats", statrouter);
 // Basic route
 app.get("/", (req, res) => {
 	res.send("Hello, World!");

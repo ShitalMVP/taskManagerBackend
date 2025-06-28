@@ -2,171 +2,84 @@ const express = require("express");
 const router = express.Router();
 const Task = require("../models/Task");
 
-// Middleware: Uncomment when you enable authentication
+const {
+  getFilteredTasks,
+  createTask,
+} = require("../controllers/taskController");
+
 const verifyToken = require("../middleware/verifyToken");
 
-/**
- * GET /api/tasks
- * Fetch all or filtered tasks for the authenticated user
- */
-router.get("/", async (req, res) => {
-	try {
-		const { status, priority, search, dueDate } = req.query;
+// ✅ GET filtered tasks by userId
+router.get("/getTasks/:id", getFilteredTasks);
 
-		const filter = { user: req.userId };
+// ✅ Create a new task (protected)
+router.post("/", verifyToken, createTask);
 
-		// ✅ Filter by status (completed or pending)
-		if (status === "completed") {
-			filter.completed = true;
-		} else if (status === "pending") {
-			filter.completed = false;
-		}
-
-		// ✅ Filter by priority
-		if (priority) {
-			filter.priority = priority;
-		}
-
-		// ✅ Search by title (case-insensitive)
-		if (search) {
-			filter.title = { $regex: search, $options: "i" };
-		}
-
-		// ✅ Filter by dueDate
-		if (dueDate) {
-			filter.dueDate = new Date(dueDate);
-		}
-
-		const tasks = await Task.find(filter).sort({ createdAt: -1 });
-
-		res.status(200).json({
-			success: true,
-			tasks,
-			message: "Filtered tasks fetched successfully",
-		});
-	} catch (error) {
-		console.error("Fetch tasks error:", error.message);
-		res.status(500).json({ success: false, message: "Internal server error" });
-	}
+// ✅ GET a single task by ID
+router.get("/:id", verifyToken, async (req, res) => {
+  try {
+    const task = await Task.findOne({ _id: req.params.id, user: req.userId });
+    if (!task) {
+      return res.status(404).json({ success: false, message: "Task not found" });
+    }
+    res.status(200).json({ success: true, task });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
 });
 
-/**
- * POST /api/tasks
- * Create a new task
- */
-router.post("/", async (req, res) => {
-	try {
-		const { title, description, priority, dueDate } = req.body;
-		if (!title) {
-			return res
-				.status(400)
-				.json({ success: false, message: "Title is required" });
-		}
+// ✅ Update a task
+router.put("/:id", verifyToken, async (req, res) => {
+  try {
+    const task = await Task.findOneAndUpdate(
+      { _id: req.params.id, user: req.userId },
+      req.body,
+      { new: true }
+    );
+    if (!task)
+      return res.status(404).json({ success: false, message: "Task not found" });
 
-		const newTask = new Task({
-			title,
-			description,
-			priority,
-			dueDate,
-			user: req.userId,
-		});
-		const savedTask = await newTask.save();
-
-		res.status(201).json({
-			success: true,
-			task: savedTask,
-			message: "Task created successfully",
-		});
-	} catch (error) {
-		console.error("Create task error:", error.message);
-		res.status(500).json({ success: false, message: "Internal server error" });
-	}
+    res.json({ success: true, task });
+  } catch (err) {
+    console.error("Update task error:", err.message);
+    res.status(500).json({ success: false, message: "Error updating task" });
+  }
 });
 
-/**
- * PUT /api/tasks/:id
- * Update an existing task
- */
-router.put("/:id", async (req, res) => {
-	try {
-		const updatedTask = await Task.findOneAndUpdate(
-			{ _id: req.params.id, user: req.userId },
-			req.body,
-			{ new: true }
-		);
+// ✅ Toggle task completion
+router.patch("/:id/status", verifyToken, async (req, res) => {
+  try {
+    const { completed } = req.body;
+    const task = await Task.findOneAndUpdate(
+      { _id: req.params.id, user: req.userId },
+      { completed },
+      { new: true }
+    );
+    if (!task)
+      return res.status(404).json({ success: false, message: "Task not found" });
 
-		if (!updatedTask) {
-			return res
-				.status(404)
-				.json({ success: false, message: "Task not found" });
-		}
-
-		res.status(200).json({
-			success: true,
-			task: updatedTask,
-			message: "Task updated successfully",
-		});
-	} catch (error) {
-		console.error("Update task error:", error.message);
-		res.status(500).json({ success: false, message: "Internal server error" });
-	}
+    res.json({ success: true, task, message: "Status updated" });
+  } catch (err) {
+    console.error("Toggle status error:", err.message);
+    res.status(500).json({ success: false, message: "Error updating status" });
+  }
 });
 
-/**
- * PATCH /api/tasks/:id/status
- * Toggle task completion
- */
-router.patch("/:id/status", async (req, res) => {
-	try {
-		const { completed } = req.body;
-		const updated = await Task.findOneAndUpdate(
-			{ _id: req.params.id, user: req.userId },
-			{ completed },
-			{ new: true }
-		);
+// ✅ Delete a task
+router.delete("/:id", verifyToken, async (req, res) => {
+  try {
+    const task = await Task.findOneAndDelete({
+      _id: req.params.id,
+      user: req.userId,
+    });
+    if (!task)
+      return res.status(404).json({ success: false, message: "Task not found" });
 
-		if (!updated) {
-			return res
-				.status(404)
-				.json({ success: false, message: "Task not found" });
-		}
-
-		res.status(200).json({
-			success: true,
-			task: updated,
-			message: "Task status updated",
-		});
-	} catch (error) {
-		console.error("Toggle status error:", error.message);
-		res.status(500).json({ success: false, message: "Internal server error" });
-	}
-});
-
-/**
- * DELETE /api/tasks/:id
- * Delete a task
- */
-router.delete("/:id", async (req, res) => {
-	try {
-		const deleted = await Task.findOneAndDelete({
-			_id: req.params.id,
-			user: req.userId,
-		});
-
-		if (!deleted) {
-			return res
-				.status(404)
-				.json({ success: false, message: "Task not found" });
-		}
-
-		res.status(200).json({
-			success: true,
-			message: "Task deleted successfully",
-		});
-	} catch (error) {
-		console.error("Delete task error:", error.message);
-		res.status(500).json({ success: false, message: "Internal server error" });
-	}
+    res.json({ success: true, message: "Task deleted" });
+  } catch (err) {
+    console.error("Delete task error:", err.message);
+    res.status(500).json({ success: false, message: "Error deleting task" });
+  }
 });
 
 module.exports = router;
