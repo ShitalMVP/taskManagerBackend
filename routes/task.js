@@ -9,6 +9,21 @@ const {
 
 const verifyToken = require("../middleware/verifyToken");
 
+router.get("/", verifyToken, async (req, res) => {
+  try {
+    const tasks = await Task.find({ user: req.userId });
+    if (!tasks || tasks.length === 0) {
+      return res
+        .status(200)
+        .json({ tasks, success: true, message: "No tasks found" });
+    }
+    res.status(200).json({ success: true, tasks });
+  } catch (err) {
+    console.error("GET /tasks error:", err.message);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
 // ✅ GET filtered tasks by userId
 router.get("/getTasks/:id", getFilteredTasks);
 
@@ -20,7 +35,9 @@ router.get("/:id", verifyToken, async (req, res) => {
   try {
     const task = await Task.findOne({ _id: req.params.id, user: req.userId });
     if (!task) {
-      return res.status(404).json({ success: false, message: "Task not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Task not found" });
     }
     res.status(200).json({ success: true, task });
   } catch (err) {
@@ -37,7 +54,9 @@ router.put("/:id", verifyToken, async (req, res) => {
       { new: true }
     );
     if (!task)
-      return res.status(404).json({ success: false, message: "Task not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Task not found" });
 
     res.json({ success: true, task });
   } catch (err) {
@@ -56,7 +75,9 @@ router.patch("/:id/status", verifyToken, async (req, res) => {
       { new: true }
     );
     if (!task)
-      return res.status(404).json({ success: false, message: "Task not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Task not found" });
 
     res.json({ success: true, task, message: "Status updated" });
   } catch (err) {
@@ -73,7 +94,9 @@ router.delete("/:id", verifyToken, async (req, res) => {
       user: req.userId,
     });
     if (!task)
-      return res.status(404).json({ success: false, message: "Task not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Task not found" });
 
     res.json({ success: true, message: "Task deleted" });
   } catch (err) {
