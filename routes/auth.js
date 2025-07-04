@@ -35,6 +35,13 @@ router.get("/me", verifyToken, async (req, res) => {
 router.post("/register", async (req, res) => {
   try {
     const { username, email, password } = req.body;
+     // ✅ Validate required fields
+    if (!username || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required",
+      });
+    }
 
     // ✅ Only allow @gmail.com or @*.in emails
     const validEmail = /^[a-zA-Z0-9._%+-]+@(gmail\.com|[a-zA-Z0-9-]+\.(in))$/;
@@ -44,15 +51,22 @@ router.post("/register", async (req, res) => {
         message: "Only @gmail.com or @.in email addresses are allowed",
       });
     }
-
+//Check for existing email
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: "User already exists",
+        message: "Email already exists",
       });
     }
-
+// ✅ Check for existing username
+		const existingUsername = await User.findOne({ username });
+		if (existingUsername) {
+			return res.status(400).json({
+				success: false,
+				message: "Username already exists",
+			});
+		}
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = new User({ username, email, password: hashedPassword });
     await user.save();
@@ -67,13 +81,13 @@ router.post("/register", async (req, res) => {
 // ✅ LOGIN using either Email or Username
 router.post("/login", async (req, res) => {
   try {
-    const { password, email } = req.body;
-
-    if (!password || !email) {
+    const {  identifier, password  } = req.body;
+	
+    if (!identifier || !password ) {
       return res.status(400).json({ error: "All fields are required" });
     }
     const user = await User.findOne({
-      email: email,
+      $or: [{ email: identifier }, { username: identifier }],
     });
 
     if (!user) {

@@ -49,11 +49,12 @@ module.exports = { getFilteredTasks };
 // ✅ POST new task
 const createTask = async (req, res) => {
 	try {
-		const { title, description } = req.body;
+		const { title, description, dueDate  } = req.body;
 
 		const task = new Task({
 			title,
 			description,
+			dueDate,
 			user: req.userId, // ✅ attach user ID from token
 		});
 
